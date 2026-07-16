@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>BonjuChef 2 - The Xpedition</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;800&family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.cdnfonts.com/css/komika-axis" rel="stylesheet">
+<style>
+:root {
+  --bg1:#ffeed1; --bg2:#ffd39a; --bg3:#ffb36a; --tile:#fff9f0; --ink:#2a1d12;
+  --accent:#ff7a1a; --accent-2:#ffb347; --ok:#29b36b; --warn:#f59e0b; --danger:#e43d3d;
+  --glass: rgba(255,255,255,.65);
+  --glass-brd: rgba(255,255,255,.9);
+}
+* { box-sizing:border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Poppins', sans-serif;
+  color: var(--ink);
+  min-height: 100vh;
+  background: radial-gradient(circle at 50% 0%, #fff 0%, var(--bg1) 30%, var(--bg2) 70%, var(--bg3) 100%) no-repeat fixed;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Glassmorphism */
+.glass {
+  background: var(--glass); border: 1px solid var(--glass-brd);
+  backdrop-filter: blur(12px) saturate(160%); border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0,0,0,.1);
+}
+
+.wrap { max-width: 1000px; width: 95%; margin: 20px auto; padding: 20px; }
+.hidden { display: none !important; }
+
+/* Titles */
+h1, h2, h3 { font-family: 'Komika Axis', Impact, sans-serif; text-transform: uppercase; letter-spacing: 1px; color: #7a3a14; text-shadow: 2px 2px 0px #fff; text-align: center; margin-bottom: 15px;}
+h1 { font-size: clamp(30px, 5vw, 45px); color: var(--accent); text-shadow: 2px 3px 0 #fff, -1px -1px 0 #fff; }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 48px; padding: 0 24px; border-radius: 14px; border: 2px solid #ffd8b0;
+  background: #fff; font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 16px;
+  cursor: pointer; box-shadow: 0 6px 15px rgba(0,0,0,.08); transition: all 0.2s;
+}
+.btn.primary { background: linear-gradient(180deg,var(--accent),#e66400); color: #fff; border: none; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
+.btn.green { background: linear-gradient(180deg,#2ac16c,#1a9350); color: #fff; border: none; }
+.btn.red { background: linear-gradient(180deg,#f97373,#e43d3d); color: #fff; border: none; }
+.btn:hover:not(:disabled) { transform: translateY(-3px) scale(1.02); box-shadow: 0 10px 25px rgba(0,0,0,.15); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
+
+/* Screens */
+.screen { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
+@keyframes popIn { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+/* Inputs */
+select, input {
+  width: 100%; height: 50px; padding: 0 16px; border: 2px solid #ffd9b7; border-radius: 12px;
+  background: #fff; font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 16px; margin-bottom: 20px;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,.05); outline: none; transition: border 0.3s;
+}
+select:focus, input:focus { border-color: var(--accent); }
+
+/* Game HUD */
+.hud { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 15px 20px; border-radius: 16px; margin-bottom: 20px; border: 2px solid #ffe4c7; box-shadow: 0 5px 15px rgba(0,0,0,.05); }
+.hud-item { font-weight: 900; font-size: 18px; color: #7a3a14; }
+.timer { font-family: 'Komika Axis', sans-serif; font-size: 28px; color: var(--danger); }
+.timer.running { animation: pulseTimer 1s infinite; }
+@keyframes pulseTimer { 50% { transform: scale(1.1); } }
+
+/* Recipe/Riddle Box */
+.riddle-box {
+  background: linear-gradient(135deg, #fffcf9, #fff0df); border-left: 6px solid var(--accent);
+  padding: 20px; border-radius: 12px; margin-bottom: 20px; font-weight: 700; font-size: 15px; color: #4a2a12; line-height: 1.5;
+}
+.limit-badge { display: inline-block; background: var(--danger); color: white; padding: 4px 10px; border-radius: 20px; font-size: 13px; font-weight: 900; margin-top: 10px; text-transform: uppercase; }
+
+/* Grid of Ingredients */
+.grid-ing { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 12px; margin-top: 15px; }
+.ing-slot {
+  background: var(--tile); border: 2px solid #ffe4c7; border-radius: 16px; padding: 10px 5px;
+  text-align: center; cursor: pointer; transition: all 0.2s; position: relative; user-select: none;
+  box-shadow: 0 4px 10px rgba(0,0,0,.06);
+}
+.ing-slot:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 8px 18px rgba(255,122,26,.3); }
+.ing-slot.selected { background: #ffe4c7; border-color: var(--accent); transform: scale(0.95); box-shadow: inset 0 4px 10px rgba(0,0,0,.1); opacity: 0.6; pointer-events: none; }
+.ing-icon { font-size: 40px; line-height: 1; margin-bottom: 5px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.15)); }
+.ing-name { font-size: 11px; font-weight: 800; line-height: 1.1; color: var(--ink); }
+
+/* Pot / Selected Items */
+.pot-zone {
+  min-height: 120px; background: rgba(0,0,0,0.05); border: 3px dashed #ffd8b0;
+  border-radius: 16px; margin: 20px 0; display: flex; align-items: center; justify-content: center; gap: 15px; flex-wrap: wrap; padding: 15px;
+}
+.pot-item {
+  animation: dropIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  background: #fff; border: 2px solid #ffb347; border-radius: 50%; width: 60px; height: 60px;
+  display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 5px 15px rgba(0,0,0,.1);
+}
+@keyframes dropIn { 0% { transform: scale(0) translateY(-50px) rotate(-45deg); opacity: 0; } 100% { transform: scale(1) translateY(0) rotate(0); opacity: 1; } }
+
+/* Results Table */
+table { width: 100%; border-collapse: collapse; margin-top: 15px; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,.08); }
+th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ffe4c7; font-weight: 700; }
+th { background: var(--bg2); color: #7a3a14; font-family: 'Komika Axis', sans-serif; letter-spacing: 1px; }
+tr:last-child td { border-bottom: none; }
+.score-good { color: var(--ok); }
+.score-bad { color: var(--danger); }
+.final-row { background: var(--ink); color: #fff; font-size: 20px; text-align: center; }
+
+/* Effects */
+.overlay-locked { position: relative; }
+.overlay-locked::after {
+  content: "ESPERANDO INICIO..."; position: absolute; inset: 0; background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(4px); z-index: 10; display: flex; align-items: center; justify-content: center;
+  font-family: 'Komika Axis', sans-serif; font-size: 24px; color: #7a3a14; border-radius: 16px;
+}
+</style>
+</head>
+<body>
+
+<div class="wrap glass">
+  <h1>🍳 BonjuChef 2</h1>
+
+  <!-- LOGIN SCREEN -->
+  <div id="screen-login" class="screen">
+    <h3>¿Quién eres?</h3>
+    <p style="text-align:center; font-weight: 700; color: #666; margin-bottom: 20px;">Selecciona tu personaje para entrar a la cocina.</p>
+    <select id="charSelect">
+      <option value="">— Elige un participante —</option>
+      <!-- Se llena por JS -->
+    </select>
+    <div style="text-align: center;">
+      <button class="btn primary" id="btnLogin">Entrar a la Cocina ➔</button>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="screen-game" class="screen hidden">
+    <div class="hud">
+      <div class="hud-item" id="hud-chef">Chef: ???</div>
+      <div class="hud-item">Platillo: <span id="hud-round">1</span>/5</div>
+      <div class="timer" id="hud-time">00:00</div>
+    </div>
+
+    <div class="riddle-box">
+      <div id="riddle-text">Acertijo aquí...</div>
+      <div class="limit-badge" id="riddle-limit">Límite: X ingredientes</div>
+    </div>
+
+    <div style="text-align: center; margin-bottom: 15px;">
+      <button class="btn green" id="btnStartRound">INICIAR RONDA ▶</button>
+    </div>
+
+    <div id="game-zone" class="overlay-locked">
+      <h3>Olla de Preparación</h3>
+      <div class="pot-zone" id="pot-zone">
+        <!-- Selected ingredients drop here -->
+      </div>
+      
+      <h3>Despensa</h3>
+      <div class="grid-ing" id="ing-grid">
+        <!-- Ingredients generated by JS -->
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 20px;">
+      <button class="btn primary hidden" id="btnNextRound">Siguiente Platillo ➔</button>
+    </div>
+  </div>
+
+  <!-- FINISH SCREEN -->
+  <div id="screen-finish" class="screen hidden">
+    <h2>¡Cocina Cerrada!</h2>
+    <p style="text-align:center; font-weight: 700; margin-bottom: 20px;">Has terminado los 5 platillos. Los jueces están deliberando en secreto.</p>
+    <div style="text-align: center;">
+      <button class="btn primary" id="btnVerResultados">Ver resultados ➔</button>
+    </div>
+  </div>
+
+  <!-- SECRET CODE SCREEN -->
+  <div id="screen-code" class="screen hidden">
+    <h2>Acceso Clasificado</h2>
+    <p style="text-align:center; font-weight: 700; margin-bottom: 20px;">Para ver el puntaje secreto, ingresa la clave de administrador.</p>
+    <input type="password" id="secretCode" placeholder="Ingresa la clave..." autocomplete="off">
+    <div style="text-align: center;">
+      <button class="btn red" id="btnUnlock">Desbloquear 🔓</button>
+    </div>
+  </div>
+
+  <!-- RESULTS SCREEN -->
+  <div id="screen-results" class="screen hidden">
+    <h2>Resultados Finales</h2>
+    <div id="results-table-container"></div>
+    <div style="text-align: center; margin-top: 20px;">
+      <button class="btn" onclick="location.reload()">Jugar de Nuevo 🔄</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Audios generados desde fuentes libres de Google Actions para simular el juego -->
+<audio id="sfx-click" src="https://actions.google.com/sounds/v1/ui/button_click.ogg"></audio>
+<audio id="sfx-pop" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg"></audio>
+<audio id="sfx-success" src="https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg"></audio>
+<audio id="sfx-tick" src="https://actions.google.com/sounds/v1/alarms/mechanical_clock_tick.ogg" loop></audio>
+
+<script>
+// --- DATOS DEL JUEGO ---
+const CHARACTERS = [
+  { name: "Ivy", icon: "🌱" },
+  { name: "Sal Lua", icon: "🌙" },
+  { name: "Marianito", icon: "👦" },
+  { name: "Bodega", icon: "🏪" },
+  { name: "Luciano", icon: "🧑‍🍳" },
+  { name: "Eduard", icon: "🎸" },
+  { name: "Bayron", icon: "😎" },
+  { name: "Leandro", icon: "🦁" },
+  { name: "Alice", icon: "👱‍♀️" },
+  { name: "Carlos", icon: "👨‍🦱" }
+];
+
+const INGREDIENTS = [
+  { id: 1, name: "Tomate", icon: "🍅" }, { id: 2, name: "Cebolla", icon: "🧅" },
+  { id: 3, name: "Ajo", icon: "🧄" }, { id: 4, name: "Pasta", icon: "🍝" },
+  { id: 5, name: "Carne", icon: "🥩" }, { id: 6, name: "Pollo", icon: "🍗" },
+  { id: 7, name: "Pescado", icon: "🐟" }, { id: 8, name: "Huevo", icon: "🥚" },
+  { id: 9, name: "Leche", icon: "🥛" }, { id: 10, name: "Queso", icon: "🧀" },
+  { id: 11, name: "Pan", icon: "🍞" }, { id: 12, name: "Arroz", icon: "🍚" },
+  { id: 13, name: "Papa", icon: "🥔" }, { id: 14, name: "Zanahoria", icon: "🥕" },
+  { id: 15, name: "Brócoli", icon: "🥦" }, { id: 16, name: "Champiñón", icon: "🍄" },
+  { id: 17, name: "Lechuga", icon: "🥬" }, { id: 18, name: "Manzana", icon: "🍎" },
+  { id: 19, name: "Limón", icon: "🍋" }, { id: 20, name: "Fresa", icon: "🍓" },
+  { id: 21, name: "Azúcar", icon: "🧂" }, { id: 22, name: "Sal", icon: "🧂" },
+  { id: 23, name: "Pimienta", icon: "🌶️" }, { id: 24, name: "Aceite", icon: "🛢️" },
+  { id: 25, name: "Mantequilla", icon: "🧈" }, { id: 26, name: "Harina", icon: "🌾" },
+  { id: 27, name: "Chocolate", icon: "🍫" }, { id: 28, name: "Café", icon: "☕" },
+  { id: 29, name: "Vino", icon: "🍷" }, { id: 30, name: "Agua", icon: "💧" }
+];
+
+// 5 Platillos con acertijos extendidos (6 a 7 ingredientes)
+const DISHES = [
+  {
+    name: "Pesadilla del Vampiro",
+    riddle: "Un banquete rojo como la sangre que ahuyenta inmortales. Resbala en oro líquido, se espolvorea con lágrimas del mar, nieva polvo madurado y se enreda eternamente en tu tenedor.",
+    limit: 6,
+    validIds: [1, 3, 4, 24, 22, 10] // Tomate, Ajo, Pasta, Aceite, Sal, Queso
+  },
+  {
+    name: "Mañana Oceánica",
+    riddle: "El nado de la bestia bañado en pura acidez. Acompañado de la raíz dorada extraída de la tierra, capas que te hacen llorar, polvo oscuro que hace estornudar y todo brillando en oro líquido.",
+    limit: 6,
+    validIds: [7, 19, 13, 2, 23, 24] // Pescado, Limón, Papa, Cebolla, Pimienta, Aceite
+  },
+  {
+    name: "Nube Oscura",
+    riddle: "Lágrimas blancas de vaca y el origen del ave, endulzados intensamente y teñidos de oscuridad. Todo toma forma con polvo de trigo molido y grasa batida de pradera.",
+    limit: 6,
+    validIds: [9, 8, 21, 27, 26, 25] // Leche, Huevo, Azúcar, Chocolate, Harina, Mantequilla
+  },
+  {
+    name: "Banquete de Duendes",
+    riddle: "Árboles en miniatura, paraguas venenosos, crujidos naranjas de la tierra y sábanas verdes crujientes. Acompáñalo con esferas de sangre vegetal, resbalando en aceite y lágrimas ácidas amarillas.",
+    limit: 7,
+    validIds: [15, 16, 14, 17, 1, 24, 19] // Brócoli, Champiñón, Zanahoria, Lechuga, Tomate, Aceite, Limón
+  },
+  {
+    name: "Amanecer Dorado",
+    riddle: "El disco solar matutino sobre un campo de trigo tostado, cobijado con grasa fundida láctea y la carne del despertar. Acompáñalo con un cubo amarillo de pastura y el elixir oscuro que despierta almas.",
+    limit: 6,
+    validIds: [8, 11, 10, 5, 25, 28] // Huevo, Pan, Queso, Carne, Mantequilla, Café
+  }
+];
+
+// --- VARIABLES DE ESTADO ---
+let currentUser = null;
+let currentRoundIdx = 0;
+let isRoundActive = false;
+let selectedIngs = [];
+let roundTime = 0;
+let timerInterval = null;
+let gameScores = []; 
+
+// --- DOM ELEMENTS ---
+const sfxClick = document.getElementById('sfx-click');
+const sfxPop = document.getElementById('sfx-pop');
+const sfxSuccess = document.getElementById('sfx-success');
+const sfxTick = document.getElementById('sfx-tick');
+
+function playSound(snd) {
+  snd.currentTime = 0;
+  snd.play().catch(()=>{});
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+
+// --- INIT ---
+function initLogin() {
+  const select = document.getElementById('charSelect');
+  CHARACTERS.forEach(c => {
+    let opt = document.createElement('option');
+    opt.value = c.name; opt.textContent = `${c.icon} ${c.name}`;
+    select.appendChild(opt);
+  });
+
+  document.getElementById('btnLogin').addEventListener('click', () => {
+    playSound(sfxClick);
+    const selectedName = select.value;
+    if(!selectedName) { alert("¡Debes elegir a quién eres!"); return; }
+    
+    currentUser = CHARACTERS.find(c => c.name === selectedName);
+    document.getElementById('hud-chef').textContent = `Chef: ${currentUser.icon} ${currentUser.name}`;
+    loadRound(0);
+    showScreen('screen-game');
+  });
+}
+
+// --- GAME LOGIC ---
+function loadRound(idx) {
+  currentRoundIdx = idx;
+  const dish = DISHES[idx];
+  
+  document.getElementById('hud-round').textContent = (idx + 1);
+  document.getElementById('riddle-text').textContent = dish.riddle;
+  document.getElementById('riddle-limit').textContent = `LÍMITE EXACTO DE INGREDIENTES: ${dish.limit}`;
+  
+  document.getElementById('hud-time').textContent = "00:00";
+  document.getElementById('hud-time').classList.remove('running');
+  
+  document.getElementById('btnStartRound').classList.remove('hidden');
+  document.getElementById('btnNextRound').classList.add('hidden');
+  document.getElementById('game-zone').classList.add('overlay-locked');
+  
+  selectedIngs = [];
+  document.getElementById('pot-zone').innerHTML = "";
+  
+  // Render Ingredients
+  const grid = document.getElementById('ing-grid');
+  grid.innerHTML = "";
+  
+  let shuffled = [...INGREDIENTS].sort(() => Math.random() - 0.5);
+  
+  shuffled.forEach(ing => {
+    let div = document.createElement('div');
+    div.className = 'ing-slot';
+    div.dataset.id = ing.id;
+    div.innerHTML = `<div class="ing-icon">${ing.icon}</div><div class="ing-name">${ing.name}</div>`;
+    
+    div.addEventListener('click', () => {
+      if(!isRoundActive) return;
+      if(selectedIngs.length >= dish.limit) return;
+      
+      playSound(sfxPop);
+      div.classList.add('selected');
+      
+      selectedIngs.push(ing);
+      let potItem = document.createElement('div');
+      potItem.className = 'pot-item';
+      potItem.textContent = ing.icon;
+      document.getElementById('pot-zone').appendChild(potItem);
+      
+      checkRoundCompletion();
+    });
+    grid.appendChild(div);
+  });
+}
+
+document.getElementById('btnStartRound').addEventListener('click', () => {
+  playSound(sfxClick);
+  document.getElementById('btnStartRound').classList.add('hidden');
+  document.getElementById('game-zone').classList.remove('overlay-locked');
+  
+  isRoundActive = true;
+  roundTime = 0;
+  playSound(sfxTick);
+  document.getElementById('hud-time').classList.add('running');
+  
+  timerInterval = setInterval(() => {
+    roundTime++;
+    let m = String(Math.floor(roundTime / 60)).padStart(2, '0');
+    let s = String(roundTime % 60).padStart(2, '0');
+    document.getElementById('hud-time').textContent = `${m}:${s}`;
+  }, 1000);
+});
+
+function checkRoundCompletion() {
+  const dish = DISHES[currentRoundIdx];
+  if(selectedIngs.length === dish.limit) {
+    isRoundActive = false;
+    clearInterval(timerInterval);
+    sfxTick.pause();
+    playSound(sfxSuccess);
+    document.getElementById('hud-time').classList.remove('running');
+    
+    calculateScore();
+    
+    document.getElementById('btnNextRound').classList.remove('hidden');
+  }
+}
+
+function calculateScore() {
+  const dish = DISHES[currentRoundIdx];
+  let ingScore = 0;
+  
+  selectedIngs.forEach(ing => {
+    if(dish.validIds.includes(ing.id)) {
+      ingScore += 25; // Good ingredient
+    } else {
+      ingScore -= 10; // Bad ingredient
+    }
+  });
+
+  // Time score: max 50 points, loses 1 point per second elapsed
+  let timeScore = Math.max(0, 50 - roundTime);
+  let total = ingScore + timeScore;
+  
+  gameScores.push({
+    dishName: dish.name,
+    ingScore: ingScore,
+    timeScore: timeScore,
+    total: total
+  });
+}
+
+document.getElementById('btnNextRound').addEventListener('click', () => {
+  playSound(sfxClick);
+  if(currentRoundIdx + 1 < DISHES.length) {
+    loadRound(currentRoundIdx + 1);
+  } else {
+    showScreen('screen-finish');
+  }
+});
+
+// --- SECRET REVEAL ---
+document.getElementById('btnVerResultados').addEventListener('click', () => {
+  playSound(sfxClick);
+  showScreen('screen-code');
+});
+
+document.getElementById('btnUnlock').addEventListener('click', () => {
+  const code = document.getElementById('secretCode').value.trim();
+  if(code === "BonjuChef2") {
+    playSound(sfxSuccess);
+    renderResults();
+    showScreen('screen-results');
+  } else {
+    alert("❌ Clave incorrecta. Acceso denegado.");
+  }
+});
+
+function renderResults() {
+  let html = `<table>
+    <tr>
+      <th>Platillo</th>
+      <th>Ptos. Ingredientes</th>
+      <th>Ptos. Tiempo</th>
+      <th>Total</th>
+    </tr>`;
+    
+  let granTotal = 0;
+  gameScores.forEach(s => {
+    granTotal += s.total;
+    let ingClass = s.ingScore > 0 ? "score-good" : "score-bad";
+    html += `<tr>
+      <td><strong>${s.dishName}</strong></td>
+      <td class="${ingClass}">${s.ingScore}</td>
+      <td>${s.timeScore}</td>
+      <td><strong>${s.total}</strong></td>
+    </tr>`;
+  });
+  
+  // Fila de total con icono y nombre del participante
+  html += `<tr class="final-row">
+    <td colspan="3">PUNTUACIÓN FINAL DE ${currentUser.icon} ${currentUser.name.toUpperCase()}</td>
+    <td>${granTotal} pts</td>
+  </tr></table>`;
+  
+  document.getElementById('results-table-container').innerHTML = html;
+}
+
+// Start
+initLogin();
+</script>
+
+</body>
+</html>
